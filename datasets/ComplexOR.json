@@ -1,0 +1,1289 @@
+{
+  "schema_version": "1.1",
+  "dataset": "ComplexOR",
+  "benchmark_variant": "audited_18",
+  "purpose": "Executable, mock-ready expected outputs for every OptiSHARE agent.",
+  "construction": {
+    "generation_order": [
+      "interpreter",
+      "formulator",
+      "programmer",
+      "execute_code",
+      "validator"
+    ],
+    "verification_order": [
+      "execute_code",
+      "programmer",
+      "formulator",
+      "interpreter",
+      "validator"
+    ],
+    "objective_tolerance": 1e-06,
+    "source_adjustments": [
+      "multi.limit[1][0]: 20 -> 25"
+    ],
+    "source_label_mismatches": [
+      "cell_tower",
+      "prod"
+    ]
+  },
+  "provenance": {
+    "release_scope": "self-contained",
+    "included_examples": 18,
+    "note": "The release contains the 18 instances with executable objective checks."
+  },
+  "examples": [
+    {
+      "example_id": "netasgn_0",
+      "source": {
+        "row_index": 0,
+        "folder_name": "netasgn",
+        "question": "Consider a project assignment problem. Given a set of people `People` and a set of projects `Projects`. Each person `i` has a certain number of available hours `Supply_{i}` and each project `j` requires a certain number of hours `Demand_{j}`. The cost per hour of work for person `i` on project `j` is `Cost_{i, j}`. Each person `i` can contribute to project `j` up to a maximum limit `Limit_{i, j}`. The problem aims to minimize the total cost of assigning people to projects. It is constrained that the total number of hours assigned from each person `i` equals its supply and the total number of hours assigned to each project `j` equals its demand. How to decide the number of hours to be assigned from each person `i` to each project `j`?\nParameters: {\"supply\": [8, 7], \"demand\": [5, 10], \"cost\": [[10, 20], [15, 25]], \"limit\": [[5, 6], [4, 7]]}",
+        "dataset_expected_objective": 285.0
+      },
+      "canonical_model": {
+        "family": "Capacitated project assignment",
+        "decision_variables": "x[i,j] is the number of hours person i assigns to project j.",
+        "objective": "Minimize total hourly assignment cost.",
+        "constraints": [
+          "Assign every person's available hours.",
+          "Meet every project's required hours.",
+          "Respect every person-project hour limit."
+        ],
+        "domain": "x[i,j] is continuous and nonnegative."
+      },
+      "canonical_expected_objective": 285.0,
+      "expected_outputs": {
+        "interpreter": {
+          "interpreted_problem": "Model the supplied instance as capacitated project assignment. x[i,j] is the number of hours person i assigns to project j. Minimize total hourly assignment cost. Assign every person's available hours. Meet every project's required hours. Respect every person-project hour limit."
+        },
+        "formulator": {
+          "mathematical_formulation": "## Model family\nCapacitated project assignment\n\n## Decision variables\nx[i,j] is the number of hours person i assigns to project j.\n\n## Objective\nMinimize total hourly assignment cost.\n\n## Constraints\n1. Assign every person's available hours.\n2. Meet every project's required hours.\n3. Respect every person-project hour limit.\n\n## Domain\nx[i,j] is continuous and nonnegative.",
+          "formulation_review": {
+            "is_valid": true,
+            "issues": []
+          },
+          "formulator_review_cycles": 1
+        },
+        "programmer": {
+          "generated_code": "import gurobipy as gp\nfrom gurobipy import GRB\n\ndata = {'supply': [8, 7], 'demand': [5, 10], 'cost': [[10, 20], [15, 25]], 'limit': [[5, 6], [4, 7]]}\nmodel = gp.Model(env=env)\nI = range(len(data['supply'])); J = range(len(data['demand']))\nx = model.addVars(I, J, lb=0, vtype=GRB.CONTINUOUS, name='hours')\nmodel.setObjective(gp.quicksum(data['cost'][i][j] * x[i,j] for i in I for j in J), GRB.MINIMIZE)\nmodel.addConstrs((gp.quicksum(x[i,j] for j in J) == data['supply'][i] for i in I), name='supply')\nmodel.addConstrs((gp.quicksum(x[i,j] for i in I) == data['demand'][j] for j in J), name='demand')\nmodel.addConstrs((x[i,j] <= data['limit'][i][j] for i in I for j in J), name='limit')\nmodel.optimize()\nif model.Status != GRB.OPTIMAL:\n    raise RuntimeError(f'Model did not solve to optimality: {model.Status}')\nprint(f'OPTISHARE_OBJECTIVE={model.ObjVal:.17g}')\n",
+          "programmer_review": {
+            "is_valid": true,
+            "issues": []
+          },
+          "programmer_attempts": 1,
+          "programmer_review_cycles": 1
+        },
+        "execute_code": {
+          "execution_result": {
+            "success": true,
+            "objective_value": 285.0,
+            "stdout": "OPTISHARE_OBJECTIVE=285\n",
+            "stderr": "",
+            "needs_reformulation": false
+          }
+        },
+        "validator": {
+          "validation_report": {
+            "is_valid": true,
+            "issues": [],
+            "target_agent": null
+          },
+          "final_answer": "The verified optimal objective value is 285."
+        }
+      },
+      "verification": {
+        "status": "verified",
+        "code_executed": true,
+        "model_status_matches_canonical": true,
+        "objective_matches_canonical": true,
+        "objective_matches_source": true,
+        "absolute_difference_from_source": 0.0,
+        "tolerance": 1e-06,
+        "note": null
+      }
+    },
+    {
+      "example_id": "flowshop_scheduling_1",
+      "source": {
+        "row_index": 1,
+        "folder_name": "flowshop_scheduling",
+        "question": "A set of jobs `Jobs` need to be processed on a set of machines `Machines` in series. All jobs have the same processing order through all the machines from machine 1 to machine M. Each machine can work in parallel. The workflow is the following: the first job of the sequence goes to the first machine to be processed; meanwhile, other jobs wait; when the first machine has processed the first job, the first job goes to the second machine and the second job of the sequence starts to be processed by the first machine; and so on. The time required to process job `j` on machine `m` is `ProcesTime_{j, m}`. The problem aims to minimize the total makespan. The goal is to find a sequence of jobs that minimize the makespan: the time when all jobs have been processed.\nParameters: {\"jobs\": [1, 2, 3], \"schedules\": [1, 2, 3], \"machines\": [1, 2], \"proces_time\": [[1, 3], [2, 2], [3, 1]]}",
+        "dataset_expected_objective": 7.0
+      },
+      "canonical_model": {
+        "family": "Permutation flow-shop scheduling",
+        "decision_variables": "x[j,k] assigns job j to sequence position k; C[k,m] is completion time at position k on machine m.",
+        "objective": "Minimize the completion time of the last position on the last machine.",
+        "constraints": [
+          "Assign each job to one position and each position to one job.",
+          "A position starts on a machine after both its previous machine and previous position are complete."
+        ],
+        "domain": "x[j,k] is binary and C[k,m] is continuous and nonnegative."
+      },
+      "canonical_expected_objective": 7.0,
+      "expected_outputs": {
+        "interpreter": {
+          "interpreted_problem": "Model the supplied instance as permutation flow-shop scheduling. x[j,k] assigns job j to sequence position k; C[k,m] is completion time at position k on machine m. Minimize the completion time of the last position on the last machine. Assign each job to one position and each position to one job. A position starts on a machine after both its previous machine and previous position are complete."
+        },
+        "formulator": {
+          "mathematical_formulation": "## Model family\nPermutation flow-shop scheduling\n\n## Decision variables\nx[j,k] assigns job j to sequence position k; C[k,m] is completion time at position k on machine m.\n\n## Objective\nMinimize the completion time of the last position on the last machine.\n\n## Constraints\n1. Assign each job to one position and each position to one job.\n2. A position starts on a machine after both its previous machine and previous position are complete.\n\n## Domain\nx[j,k] is binary and C[k,m] is continuous and nonnegative.",
+          "formulation_review": {
+            "is_valid": true,
+            "issues": []
+          },
+          "formulator_review_cycles": 1
+        },
+        "programmer": {
+          "generated_code": "import gurobipy as gp\nfrom gurobipy import GRB\n\ndata = {'jobs': [1, 2, 3], 'schedules': [1, 2, 3], 'machines': [1, 2], 'proces_time': [[1, 3], [2, 2], [3, 1]]}\nmodel = gp.Model(env=env)\nJ = range(len(data['jobs'])); K = range(len(data['schedules'])); M = range(len(data['machines']))\nx = model.addVars(J, K, vtype=GRB.BINARY, name='assign')\nC = model.addVars(K, M, lb=0, name='completion')\nmodel.addConstrs((gp.quicksum(x[j,k] for k in K) == 1 for j in J), name='job_once')\nmodel.addConstrs((gp.quicksum(x[j,k] for j in J) == 1 for k in K), name='position_once')\nfor k in K:\n    for m in M:\n        duration = gp.quicksum(data['proces_time'][j][m] * x[j,k] for j in J)\n        if k == 0 and m == 0: model.addConstr(C[k,m] >= duration)\n        elif k == 0: model.addConstr(C[k,m] >= C[k,m-1] + duration)\n        elif m == 0: model.addConstr(C[k,m] >= C[k-1,m] + duration)\n        else:\n            model.addConstr(C[k,m] >= C[k,m-1] + duration)\n            model.addConstr(C[k,m] >= C[k-1,m] + duration)\nmodel.setObjective(C[len(K)-1, len(M)-1], GRB.MINIMIZE)\nmodel.optimize()\nif model.Status != GRB.OPTIMAL:\n    raise RuntimeError(f'Model did not solve to optimality: {model.Status}')\nprint(f'OPTISHARE_OBJECTIVE={model.ObjVal:.17g}')\n",
+          "programmer_review": {
+            "is_valid": true,
+            "issues": []
+          },
+          "programmer_attempts": 1,
+          "programmer_review_cycles": 1
+        },
+        "execute_code": {
+          "execution_result": {
+            "success": true,
+            "objective_value": 7.0,
+            "stdout": "OPTISHARE_OBJECTIVE=7\n",
+            "stderr": "",
+            "needs_reformulation": false
+          }
+        },
+        "validator": {
+          "validation_report": {
+            "is_valid": true,
+            "issues": [],
+            "target_agent": null
+          },
+          "final_answer": "The verified optimal objective value is 7."
+        }
+      },
+      "verification": {
+        "status": "verified",
+        "code_executed": true,
+        "model_status_matches_canonical": true,
+        "objective_matches_canonical": true,
+        "objective_matches_source": true,
+        "absolute_difference_from_source": 0.0,
+        "tolerance": 1e-06,
+        "note": null
+      }
+    },
+    {
+      "example_id": "multi_2",
+      "source": {
+        "row_index": 2,
+        "folder_name": "multi",
+        "question": "This is a multi-commodity transportation problem. Given a set of origins `Origins`, a set of destinations `Destinations`, and a set of products `Products`. Each origin `i` has a certain supply of each product `p` `Supply_{i,p}` and each destination `j` has a certain demand for each product `p` `Demand_{j,p}`. The cost of shipping one unit of product `p` from origin `i` to destination `j` is `ShippingCost_{i, j, p}`. The problem aims to minimize the total cost of shipping all products from the origins to the destinations. It is constrained that the total amount of each product `p` shipped from each origin `i` equals its supply, the total amount of each product `p` shipped to each destination `j` equals its demand, and the total amount of all products shipped from each origin `i` to each destination `j` does not exceed a certain limit `Limit_{i,j}`. How to decide the number of units of each product `p` to be shipped from each origin `i` to each destination `j`?\nParameters: {\"supply\": [[20, 30], [40, 10]], \"demand\": [[30, 30], [30, 10]], \"limit\": [[35, 25], [25, 30]], \"cost\": [[[2, 3], [4, 1]], [[3, 2], [2, 4]]]}",
+        "dataset_expected_objective": 235.0,
+        "raw_local_question": "This is a multi-commodity transportation problem. Given a set of origins `Origins`, a set of destinations `Destinations`, and a set of products `Products`. Each origin `i` has a certain supply of each product `p` `Supply_{i,p}` and each destination `j` has a certain demand for each product `p` `Demand_{j,p}`. The cost of shipping one unit of product `p` from origin `i` to destination `j` is `ShippingCost_{i, j, p}`. The problem aims to minimize the total cost of shipping all products from the origins to the destinations. It is constrained that the total amount of each product `p` shipped from each origin `i` equals its supply, the total amount of each product `p` shipped to each destination `j` equals its demand, and the total amount of all products shipped from each origin `i` to each destination `j` does not exceed a certain limit `Limit_{i,j}`. How to decide the number of units of each product `p` to be shipped from each origin `i` to each destination `j`?\nParameters: {\"supply\": [[20, 30], [40, 10]], \"demand\": [[30, 30], [30, 10]], \"limit\": [[35, 25], [20, 30]], \"cost\": [[[2, 3], [4, 1]], [[3, 2], [2, 4]]]}",
+        "cleaning_adjustment": {
+          "field": "limit[1][0]",
+          "raw_value": 20,
+          "clean_value": 25,
+          "reason": "The published 18-item benchmark fixes this lane capacity, making the instance feasible with objective 235."
+        }
+      },
+      "canonical_model": {
+        "family": "Capacitated multi-commodity transportation",
+        "decision_variables": "x[i,j,p] is the amount of product p shipped from origin i to destination j.",
+        "objective": "Minimize total shipping cost.",
+        "constraints": [
+          "Ship each origin-product supply exactly.",
+          "Meet each destination-product demand exactly.",
+          "Respect the shared capacity of every origin-destination lane."
+        ],
+        "domain": "x[i,j,p] is continuous and nonnegative."
+      },
+      "canonical_expected_objective": 235.0,
+      "expected_outputs": {
+        "interpreter": {
+          "interpreted_problem": "Model the supplied instance as capacitated multi-commodity transportation. x[i,j,p] is the amount of product p shipped from origin i to destination j. Minimize total shipping cost. Ship each origin-product supply exactly. Meet each destination-product demand exactly. Respect the shared capacity of every origin-destination lane."
+        },
+        "formulator": {
+          "mathematical_formulation": "## Model family\nCapacitated multi-commodity transportation\n\n## Decision variables\nx[i,j,p] is the amount of product p shipped from origin i to destination j.\n\n## Objective\nMinimize total shipping cost.\n\n## Constraints\n1. Ship each origin-product supply exactly.\n2. Meet each destination-product demand exactly.\n3. Respect the shared capacity of every origin-destination lane.\n\n## Domain\nx[i,j,p] is continuous and nonnegative.",
+          "formulation_review": {
+            "is_valid": true,
+            "issues": []
+          },
+          "formulator_review_cycles": 1
+        },
+        "programmer": {
+          "generated_code": "import gurobipy as gp\nfrom gurobipy import GRB\n\ndata = {'supply': [[20, 30], [40, 10]], 'demand': [[30, 30], [30, 10]], 'limit': [[35, 25], [25, 30]], 'cost': [[[2, 3], [4, 1]], [[3, 2], [2, 4]]]}\nmodel = gp.Model(env=env)\nI = range(len(data['supply'])); J = range(len(data['demand'])); P = range(len(data['supply'][0]))\nx = model.addVars(I, J, P, lb=0, name='shipment')\nmodel.setObjective(gp.quicksum(data['cost'][i][j][p] * x[i,j,p] for i in I for j in J for p in P), GRB.MINIMIZE)\nmodel.addConstrs((gp.quicksum(x[i,j,p] for j in J) == data['supply'][i][p] for i in I for p in P), name='supply')\nmodel.addConstrs((gp.quicksum(x[i,j,p] for i in I) == data['demand'][j][p] for j in J for p in P), name='demand')\nmodel.addConstrs((gp.quicksum(x[i,j,p] for p in P) <= data['limit'][i][j] for i in I for j in J), name='lane_capacity')\nmodel.optimize()\nif model.Status != GRB.OPTIMAL:\n    raise RuntimeError(f'Model did not solve to optimality: {model.Status}')\nprint(f'OPTISHARE_OBJECTIVE={model.ObjVal:.17g}')\n",
+          "programmer_review": {
+            "is_valid": true,
+            "issues": []
+          },
+          "programmer_attempts": 1,
+          "programmer_review_cycles": 1
+        },
+        "execute_code": {
+          "execution_result": {
+            "success": true,
+            "objective_value": 235.0,
+            "stdout": "OPTISHARE_OBJECTIVE=235\n",
+            "stderr": "",
+            "needs_reformulation": false
+          }
+        },
+        "validator": {
+          "validation_report": {
+            "is_valid": true,
+            "issues": [],
+            "target_agent": null
+          },
+          "final_answer": "The verified optimal objective value is 235."
+        }
+      },
+      "verification": {
+        "status": "verified",
+        "code_executed": true,
+        "model_status_matches_canonical": true,
+        "objective_matches_canonical": true,
+        "objective_matches_source": true,
+        "absolute_difference_from_source": 0.0,
+        "tolerance": 1e-06,
+        "note": null
+      }
+    },
+    {
+      "example_id": "cutting_stock_3",
+      "source": {
+        "row_index": 3,
+        "folder_name": "cutting_stock",
+        "question": "This is a cutting stock problem. Given a roll of width `RollWidth` and a set of widths `Width` to be cut. Each width `i` has a certain number of Orders `Orders_{i}`. There are `NumPatterns` patterns and each pattern `j` has a certain number of rolls of each width `i` `NumRollsWidth_{i, j}`. The problem aims to minimize the total number of raw rolls cut. It is constrained that for each width `i`, the total number of rolls cut meets the total Orders. How to decide the number of rolls cut using each pattern `j`?\nParameters: {\"roll_width\": 10, \"widths\": [2, 3, 5], \"orders\": [4, 2, 2], \"num_patterns\": 2, \"num_rolls_width\": [[1, 0], [2, 0], [0, 1]]}",
+        "dataset_expected_objective": 6.0
+      },
+      "canonical_model": {
+        "family": "Cutting stock with predefined patterns",
+        "decision_variables": "y[p] is the integer number of raw rolls cut with pattern p.",
+        "objective": "Minimize the number of raw rolls used.",
+        "constraints": [
+          "Produce at least the required number of pieces of every width using the supplied pattern matrix."
+        ],
+        "domain": "y[p] is integer and nonnegative."
+      },
+      "canonical_expected_objective": 6.0,
+      "expected_outputs": {
+        "interpreter": {
+          "interpreted_problem": "Model the supplied instance as cutting stock with predefined patterns. y[p] is the integer number of raw rolls cut with pattern p. Minimize the number of raw rolls used. Produce at least the required number of pieces of every width using the supplied pattern matrix."
+        },
+        "formulator": {
+          "mathematical_formulation": "## Model family\nCutting stock with predefined patterns\n\n## Decision variables\ny[p] is the integer number of raw rolls cut with pattern p.\n\n## Objective\nMinimize the number of raw rolls used.\n\n## Constraints\n1. Produce at least the required number of pieces of every width using the supplied pattern matrix.\n\n## Domain\ny[p] is integer and nonnegative.",
+          "formulation_review": {
+            "is_valid": true,
+            "issues": []
+          },
+          "formulator_review_cycles": 1
+        },
+        "programmer": {
+          "generated_code": "import gurobipy as gp\nfrom gurobipy import GRB\n\ndata = {'roll_width': 10, 'widths': [2, 3, 5], 'orders': [4, 2, 2], 'num_patterns': 2, 'num_rolls_width': [[1, 0], [2, 0], [0, 1]]}\nmodel = gp.Model(env=env)\nI = range(len(data['widths'])); P = range(data['num_patterns'])\ny = model.addVars(P, vtype=GRB.INTEGER, lb=0, name='pattern_count')\nmodel.setObjective(gp.quicksum(y[p] for p in P), GRB.MINIMIZE)\nmodel.addConstrs((gp.quicksum(data['num_rolls_width'][i][p] * y[p] for p in P) >= data['orders'][i] for i in I), name='orders')\nmodel.optimize()\nif model.Status != GRB.OPTIMAL:\n    raise RuntimeError(f'Model did not solve to optimality: {model.Status}')\nprint(f'OPTISHARE_OBJECTIVE={model.ObjVal:.17g}')\n",
+          "programmer_review": {
+            "is_valid": true,
+            "issues": []
+          },
+          "programmer_attempts": 1,
+          "programmer_review_cycles": 1
+        },
+        "execute_code": {
+          "execution_result": {
+            "success": true,
+            "objective_value": 6.0,
+            "stdout": "OPTISHARE_OBJECTIVE=6\n",
+            "stderr": "",
+            "needs_reformulation": false
+          }
+        },
+        "validator": {
+          "validation_report": {
+            "is_valid": true,
+            "issues": [],
+            "target_agent": null
+          },
+          "final_answer": "The verified optimal objective value is 6."
+        }
+      },
+      "verification": {
+        "status": "verified",
+        "code_executed": true,
+        "model_status_matches_canonical": true,
+        "objective_matches_canonical": true,
+        "objective_matches_source": true,
+        "absolute_difference_from_source": 0.0,
+        "tolerance": 1e-06,
+        "note": null
+      }
+    },
+    {
+      "example_id": "diet_problem_4",
+      "source": {
+        "row_index": 4,
+        "folder_name": "diet_problem",
+        "question": "Consider a diet problem. Given a set of nutrients `Nutrients` and a set of foods `Foods`. Each food `j` has a cost `Cost_{j}` and a range of amount that can be bought `[MinAmount_{j}, MaxAmount_{j}]`. Each nutrient `i` has a range of amount that should be included in the diet `[MinNutrient_{i}, MaxNutrient_{i}]`. The amount of nutrient `i` in food `j` is `NutrientAmount_{i, j}`. The problem aims to minimize the total cost of buying foods. It is constrained that the total amount of each nutrient `i` in the bought foods should be within its range. How to decide the amount of each food `j` to buy?\nParameters: {\"food_set\": [\"Apple\", \"Banana\"], \"nutrient_set\": [\"VitaminC\", \"Fiber\"], \"food_cost\": [2.0, 1.5], \"min_food_amount\": [0, 0], \"max_food_amount\": [10, 10], \"min_nutrient_amount\": [50, 30], \"max_nutrient_amount\": [100, 60], \"nutrient_amount\": [[10, 5], [5, 10]]}",
+        "dataset_expected_objective": 10.333333333452588
+      },
+      "canonical_model": {
+        "family": "Bounded diet",
+        "decision_variables": "x[f] is the amount purchased of food f.",
+        "objective": "Minimize total food cost.",
+        "constraints": [
+          "Keep each food within its purchase bounds.",
+          "Keep the total amount of each nutrient within its minimum and maximum."
+        ],
+        "domain": "x[f] is continuous."
+      },
+      "canonical_expected_objective": 10.333333333333334,
+      "expected_outputs": {
+        "interpreter": {
+          "interpreted_problem": "Model the supplied instance as bounded diet. x[f] is the amount purchased of food f. Minimize total food cost. Keep each food within its purchase bounds. Keep the total amount of each nutrient within its minimum and maximum."
+        },
+        "formulator": {
+          "mathematical_formulation": "## Model family\nBounded diet\n\n## Decision variables\nx[f] is the amount purchased of food f.\n\n## Objective\nMinimize total food cost.\n\n## Constraints\n1. Keep each food within its purchase bounds.\n2. Keep the total amount of each nutrient within its minimum and maximum.\n\n## Domain\nx[f] is continuous.",
+          "formulation_review": {
+            "is_valid": true,
+            "issues": []
+          },
+          "formulator_review_cycles": 1
+        },
+        "programmer": {
+          "generated_code": "import gurobipy as gp\nfrom gurobipy import GRB\n\ndata = {'food_set': ['Apple', 'Banana'], 'nutrient_set': ['VitaminC', 'Fiber'], 'food_cost': [2.0, 1.5], 'min_food_amount': [0, 0], 'max_food_amount': [10, 10], 'min_nutrient_amount': [50, 30], 'max_nutrient_amount': [100, 60], 'nutrient_amount': [[10, 5], [5, 10]]}\nmodel = gp.Model(env=env)\nF = range(len(data['food_set'])); N = range(len(data['nutrient_set']))\nx = model.addVars(F, lb={f:data['min_food_amount'][f] for f in F}, ub={f:data['max_food_amount'][f] for f in F}, name='food')\nmodel.setObjective(gp.quicksum(data['food_cost'][f] * x[f] for f in F), GRB.MINIMIZE)\nmodel.addConstrs((gp.quicksum(data['nutrient_amount'][n][f] * x[f] for f in F) >= data['min_nutrient_amount'][n] for n in N), name='nutrient_min')\nmodel.addConstrs((gp.quicksum(data['nutrient_amount'][n][f] * x[f] for f in F) <= data['max_nutrient_amount'][n] for n in N), name='nutrient_max')\nmodel.optimize()\nif model.Status != GRB.OPTIMAL:\n    raise RuntimeError(f'Model did not solve to optimality: {model.Status}')\nprint(f'OPTISHARE_OBJECTIVE={model.ObjVal:.17g}')\n",
+          "programmer_review": {
+            "is_valid": true,
+            "issues": []
+          },
+          "programmer_attempts": 1,
+          "programmer_review_cycles": 1
+        },
+        "execute_code": {
+          "execution_result": {
+            "success": true,
+            "objective_value": 10.333333333333334,
+            "stdout": "OPTISHARE_OBJECTIVE=10.333333333333334\n",
+            "stderr": "",
+            "needs_reformulation": false
+          }
+        },
+        "validator": {
+          "validation_report": {
+            "is_valid": true,
+            "issues": [],
+            "target_agent": null
+          },
+          "final_answer": "The verified optimal objective value is 10.333333333333334."
+        }
+      },
+      "verification": {
+        "status": "verified",
+        "code_executed": true,
+        "model_status_matches_canonical": true,
+        "objective_matches_canonical": true,
+        "objective_matches_source": true,
+        "absolute_difference_from_source": 1.1925394005629641e-10,
+        "tolerance": 1e-06,
+        "note": null
+      }
+    },
+    {
+      "example_id": "cell_tower_5",
+      "source": {
+        "row_index": 5,
+        "folder_name": "cell_tower",
+        "question": "A telecom company needs to build a set of cell towers to provide signal coverage for the inhabitants of a given city. A number of potential locations where the towers could be built have been identified. The towers have a fixed range, and due to budget constraints only a limited number of them can be built. Given these restrictions, the company wishes to provide coverage to the largest percentage of the population possible. To simplify the problem, the company has split the area it wishes to cover into a set of regions, each of which has a known population. The goal is then to choose which of the potential locations the company should build cell towers on in order to provide coverage to as many people as possible.\nParameters: {\"delta\": [[1, 0, 1], [0, 1, 0]], \"cost\": [3, 4], \"population\": [100, 200, 150], \"budget\": 4}",
+        "dataset_expected_objective": 200.0
+      },
+      "canonical_model": {
+        "family": "Budgeted maximum coverage",
+        "decision_variables": "y[i] selects tower location i; z[r] indicates whether region r is covered.",
+        "objective": "Maximize the population of covered regions.",
+        "constraints": [
+          "Charge the cost of each selected tower against the budget.",
+          "A region can be marked covered only if at least one selected tower reaches it."
+        ],
+        "domain": "y[i] and z[r] are binary."
+      },
+      "canonical_expected_objective": 250.0,
+      "expected_outputs": {
+        "interpreter": {
+          "interpreted_problem": "Model the supplied instance as budgeted maximum coverage. y[i] selects tower location i; z[r] indicates whether region r is covered. Maximize the population of covered regions. Charge the cost of each selected tower against the budget. A region can be marked covered only if at least one selected tower reaches it."
+        },
+        "formulator": {
+          "mathematical_formulation": "## Model family\nBudgeted maximum coverage\n\n## Decision variables\ny[i] selects tower location i; z[r] indicates whether region r is covered.\n\n## Objective\nMaximize the population of covered regions.\n\n## Constraints\n1. Charge the cost of each selected tower against the budget.\n2. A region can be marked covered only if at least one selected tower reaches it.\n\n## Domain\ny[i] and z[r] are binary.",
+          "formulation_review": {
+            "is_valid": true,
+            "issues": []
+          },
+          "formulator_review_cycles": 1
+        },
+        "programmer": {
+          "generated_code": "import gurobipy as gp\nfrom gurobipy import GRB\n\ndata = {'delta': [[1, 0, 1], [0, 1, 0]], 'cost': [3, 4], 'population': [100, 200, 150], 'budget': 4}\nmodel = gp.Model(env=env)\nI = range(len(data['cost'])); R = range(len(data['population']))\ny = model.addVars(I, vtype=GRB.BINARY, name='tower')\nz = model.addVars(R, vtype=GRB.BINARY, name='covered')\nmodel.setObjective(gp.quicksum(data['population'][r] * z[r] for r in R), GRB.MAXIMIZE)\nmodel.addConstr(gp.quicksum(data['cost'][i] * y[i] for i in I) <= data['budget'], name='budget')\nmodel.addConstrs((z[r] <= gp.quicksum(data['delta'][i][r] * y[i] for i in I) for r in R), name='coverage')\nmodel.optimize()\nif model.Status != GRB.OPTIMAL:\n    raise RuntimeError(f'Model did not solve to optimality: {model.Status}')\nprint(f'OPTISHARE_OBJECTIVE={model.ObjVal:.17g}')\n",
+          "programmer_review": {
+            "is_valid": true,
+            "issues": []
+          },
+          "programmer_attempts": 1,
+          "programmer_review_cycles": 1
+        },
+        "execute_code": {
+          "execution_result": {
+            "success": true,
+            "objective_value": 250.0,
+            "stdout": "OPTISHARE_OBJECTIVE=250\n",
+            "stderr": "",
+            "needs_reformulation": false
+          }
+        },
+        "validator": {
+          "validation_report": {
+            "is_valid": true,
+            "issues": [],
+            "target_agent": null
+          },
+          "final_answer": "The verified optimal objective value is 250."
+        }
+      },
+      "verification": {
+        "status": "source_label_mismatch",
+        "code_executed": true,
+        "model_status_matches_canonical": true,
+        "objective_matches_canonical": true,
+        "objective_matches_source": false,
+        "absolute_difference_from_source": 50.0,
+        "tolerance": 1e-06,
+        "note": "Tower 0 costs 3 within the budget of 4 and covers regions 0 and 2, whose population totals 250."
+      }
+    },
+    {
+      "example_id": "dietu_problem_6",
+      "source": {
+        "row_index": 6,
+        "folder_name": "dietu_problem",
+        "question": "Consider a diet problem. Given a set of foods `Foods` and a set of nutrients `Nutrients` which is the union of nutrients with minimum requirements `MinRequirements` and nutrients with maximum requirements `MaxRequirements`. Each food `j` has a cost `Cost_{j}` and the amount of each nutrient `i` it contains is `NutrientAmount_{i, j}`. The problem aims to minimize the total cost of buying foods. It is constrained that the total amount of each nutrient `i` with minimum requirements in the foods bought is at least `MinRequirement_{i}` and the total amount of each nutrient `i` with maximum requirements in the foods bought is at most `MaxRequirement_{i}`. How to decide the amount of each food `j` to buy?\nParameters: {\"cost\": [2, 3, 1.5], \"f_min\": [0, 0, 0], \"f_max\": [100, 100, 100], \"n_min\": [50, 60], \"n_max\": [200, 250], \"amt\": [[2, 1, 3], [3, 4, 2]]}",
+        "dataset_expected_objective": 41.0
+      },
+      "canonical_model": {
+        "family": "Diet with nutrient bounds",
+        "decision_variables": "x[f] is the amount purchased of food f.",
+        "objective": "Minimize total food cost.",
+        "constraints": [
+          "Keep food quantities within their bounds.",
+          "Meet every nutrient minimum.",
+          "Do not exceed any nutrient maximum."
+        ],
+        "domain": "x[f] is continuous."
+      },
+      "canonical_expected_objective": 41.0,
+      "expected_outputs": {
+        "interpreter": {
+          "interpreted_problem": "Model the supplied instance as diet with nutrient bounds. x[f] is the amount purchased of food f. Minimize total food cost. Keep food quantities within their bounds. Meet every nutrient minimum. Do not exceed any nutrient maximum."
+        },
+        "formulator": {
+          "mathematical_formulation": "## Model family\nDiet with nutrient bounds\n\n## Decision variables\nx[f] is the amount purchased of food f.\n\n## Objective\nMinimize total food cost.\n\n## Constraints\n1. Keep food quantities within their bounds.\n2. Meet every nutrient minimum.\n3. Do not exceed any nutrient maximum.\n\n## Domain\nx[f] is continuous.",
+          "formulation_review": {
+            "is_valid": true,
+            "issues": []
+          },
+          "formulator_review_cycles": 1
+        },
+        "programmer": {
+          "generated_code": "import gurobipy as gp\nfrom gurobipy import GRB\n\ndata = {'cost': [2, 3, 1.5], 'f_min': [0, 0, 0], 'f_max': [100, 100, 100], 'n_min': [50, 60], 'n_max': [200, 250], 'amt': [[2, 1, 3], [3, 4, 2]]}\nmodel = gp.Model(env=env)\nF = range(len(data['cost'])); N = range(len(data['n_min']))\nx = model.addVars(F, lb={f:data['f_min'][f] for f in F}, ub={f:data['f_max'][f] for f in F}, name='food')\nmodel.setObjective(gp.quicksum(data['cost'][f] * x[f] for f in F), GRB.MINIMIZE)\nmodel.addConstrs((gp.quicksum(data['amt'][n][f] * x[f] for f in F) >= data['n_min'][n] for n in N), name='nutrient_min')\nmodel.addConstrs((gp.quicksum(data['amt'][n][f] * x[f] for f in F) <= data['n_max'][n] for n in N), name='nutrient_max')\nmodel.optimize()\nif model.Status != GRB.OPTIMAL:\n    raise RuntimeError(f'Model did not solve to optimality: {model.Status}')\nprint(f'OPTISHARE_OBJECTIVE={model.ObjVal:.17g}')\n",
+          "programmer_review": {
+            "is_valid": true,
+            "issues": []
+          },
+          "programmer_attempts": 1,
+          "programmer_review_cycles": 1
+        },
+        "execute_code": {
+          "execution_result": {
+            "success": true,
+            "objective_value": 41.0,
+            "stdout": "OPTISHARE_OBJECTIVE=41\n",
+            "stderr": "",
+            "needs_reformulation": false
+          }
+        },
+        "validator": {
+          "validation_report": {
+            "is_valid": true,
+            "issues": [],
+            "target_agent": null
+          },
+          "final_answer": "The verified optimal objective value is 41."
+        }
+      },
+      "verification": {
+        "status": "verified",
+        "code_executed": true,
+        "model_status_matches_canonical": true,
+        "objective_matches_canonical": true,
+        "objective_matches_source": true,
+        "absolute_difference_from_source": 0.0,
+        "tolerance": 1e-06,
+        "note": null
+      }
+    },
+    {
+      "example_id": "prod_7",
+      "source": {
+        "row_index": 7,
+        "folder_name": "prod",
+        "question": "Consider a problem where we have a set `P`. For each element `j` in `P`, we have a parameter `a[j]`, a parameter `c[j]`, and a parameter `u[j]`. We also have a global parameter `b`. We have a variable `X[j]` for each `j` in `P`. The goal is to maximize the total profit, which is the sum of `c[j] * X[j]` for all `j` in `P`. The constraints are that the sum of `(1/a[j]) * X[j]` for all `j` in `P` should be less than or equal to `b`, and `X[j]` should be between 0 and `u[j]` for all `j` in `P`.\nParameters: {\"a\": [3, 1, 2], \"c\": [5, 10, 8], \"u\": [4, 6, 3], \"b\": 4}",
+        "dataset_expected_objective": 66.0
+      },
+      "canonical_model": {
+        "family": "Continuous product-mix knapsack",
+        "decision_variables": "x[j] is the production quantity of product j.",
+        "objective": "Maximize total profit.",
+        "constraints": [
+          "Do not exceed the shared resource b using x[j]/a[j] units per product.",
+          "Respect each product's upper bound."
+        ],
+        "domain": "x[j] is continuous and 0 <= x[j] <= u[j]."
+      },
+      "canonical_expected_objective": 55.66666666666667,
+      "expected_outputs": {
+        "interpreter": {
+          "interpreted_problem": "Model the supplied instance as continuous product-mix knapsack. x[j] is the production quantity of product j. Maximize total profit. Do not exceed the shared resource b using x[j]/a[j] units per product. Respect each product's upper bound."
+        },
+        "formulator": {
+          "mathematical_formulation": "## Model family\nContinuous product-mix knapsack\n\n## Decision variables\nx[j] is the production quantity of product j.\n\n## Objective\nMaximize total profit.\n\n## Constraints\n1. Do not exceed the shared resource b using x[j]/a[j] units per product.\n2. Respect each product's upper bound.\n\n## Domain\nx[j] is continuous and 0 <= x[j] <= u[j].",
+          "formulation_review": {
+            "is_valid": true,
+            "issues": []
+          },
+          "formulator_review_cycles": 1
+        },
+        "programmer": {
+          "generated_code": "import gurobipy as gp\nfrom gurobipy import GRB\n\ndata = {'a': [3, 1, 2], 'c': [5, 10, 8], 'u': [4, 6, 3], 'b': 4}\nmodel = gp.Model(env=env)\nP = range(len(data['a']))\nx = model.addVars(P, lb=0, ub={j:data['u'][j] for j in P}, name='production')\nmodel.setObjective(gp.quicksum(data['c'][j] * x[j] for j in P), GRB.MAXIMIZE)\nmodel.addConstr(gp.quicksum(x[j] / data['a'][j] for j in P) <= data['b'], name='resource')\nmodel.optimize()\nif model.Status != GRB.OPTIMAL:\n    raise RuntimeError(f'Model did not solve to optimality: {model.Status}')\nprint(f'OPTISHARE_OBJECTIVE={model.ObjVal:.17g}')\n",
+          "programmer_review": {
+            "is_valid": true,
+            "issues": []
+          },
+          "programmer_attempts": 1,
+          "programmer_review_cycles": 1
+        },
+        "execute_code": {
+          "execution_result": {
+            "success": true,
+            "objective_value": 55.66666666666667,
+            "stdout": "OPTISHARE_OBJECTIVE=55.666666666666671\n",
+            "stderr": "",
+            "needs_reformulation": false
+          }
+        },
+        "validator": {
+          "validation_report": {
+            "is_valid": true,
+            "issues": [],
+            "target_agent": null
+          },
+          "final_answer": "The verified optimal objective value is 55.666666666666671."
+        }
+      },
+      "verification": {
+        "status": "source_label_mismatch",
+        "code_executed": true,
+        "model_status_matches_canonical": true,
+        "objective_matches_canonical": true,
+        "objective_matches_source": false,
+        "absolute_difference_from_source": 10.333333333333329,
+        "tolerance": 1e-06,
+        "note": "The literal continuous model attains 55.66666666666667 under the stated x[j]/a[j] resource constraint."
+      }
+    },
+    {
+      "example_id": "nltrans_8",
+      "source": {
+        "row_index": 8,
+        "folder_name": "nltrans",
+        "question": "Consider a transportation problem. Given a set of origins `Origins` and a set of destinations `Destinations`. Each origin `i` has a certain supply of goods `Supply_{i}` and each destination `j` has a certain demand for goods `Demand_{j}`. The cost of shipping one unit of goods from origin `i` to destination `j` is `Rate_{i, j}`. However, the number of units shipped can't exceed the limit `Limit_{i, j}`. The problem aims to minimize the total cost of shipping goods from the origins to the destinations. How to decide the number of units to be shipped from each origin `i` to each destination `j`?\nParameters: {\"supply\": [20, 30], \"demand\": [30, 20], \"rate\": [[8, 6], [5, 10]], \"limit\": [[15, 25], [25, 20]]}",
+        "dataset_expected_objective": 305.0
+      },
+      "canonical_model": {
+        "family": "Capacitated transportation",
+        "decision_variables": "x[i,j] is the amount shipped from origin i to destination j.",
+        "objective": "Minimize total transportation cost.",
+        "constraints": [
+          "Do not exceed origin supply.",
+          "Meet destination demand exactly.",
+          "Respect each route limit."
+        ],
+        "domain": "x[i,j] is continuous and nonnegative."
+      },
+      "canonical_expected_objective": 305.0,
+      "expected_outputs": {
+        "interpreter": {
+          "interpreted_problem": "Model the supplied instance as capacitated transportation. x[i,j] is the amount shipped from origin i to destination j. Minimize total transportation cost. Do not exceed origin supply. Meet destination demand exactly. Respect each route limit."
+        },
+        "formulator": {
+          "mathematical_formulation": "## Model family\nCapacitated transportation\n\n## Decision variables\nx[i,j] is the amount shipped from origin i to destination j.\n\n## Objective\nMinimize total transportation cost.\n\n## Constraints\n1. Do not exceed origin supply.\n2. Meet destination demand exactly.\n3. Respect each route limit.\n\n## Domain\nx[i,j] is continuous and nonnegative.",
+          "formulation_review": {
+            "is_valid": true,
+            "issues": []
+          },
+          "formulator_review_cycles": 1
+        },
+        "programmer": {
+          "generated_code": "import gurobipy as gp\nfrom gurobipy import GRB\n\ndata = {'supply': [20, 30], 'demand': [30, 20], 'rate': [[8, 6], [5, 10]], 'limit': [[15, 25], [25, 20]]}\nmodel = gp.Model(env=env)\nI = range(len(data['supply'])); J = range(len(data['demand']))\nx = model.addVars(I, J, lb=0, name='shipment')\nmodel.setObjective(gp.quicksum(data['rate'][i][j] * x[i,j] for i in I for j in J), GRB.MINIMIZE)\nmodel.addConstrs((gp.quicksum(x[i,j] for j in J) <= data['supply'][i] for i in I), name='supply')\nmodel.addConstrs((gp.quicksum(x[i,j] for i in I) == data['demand'][j] for j in J), name='demand')\nmodel.addConstrs((x[i,j] <= data['limit'][i][j] for i in I for j in J), name='route_limit')\nmodel.optimize()\nif model.Status != GRB.OPTIMAL:\n    raise RuntimeError(f'Model did not solve to optimality: {model.Status}')\nprint(f'OPTISHARE_OBJECTIVE={model.ObjVal:.17g}')\n",
+          "programmer_review": {
+            "is_valid": true,
+            "issues": []
+          },
+          "programmer_attempts": 1,
+          "programmer_review_cycles": 1
+        },
+        "execute_code": {
+          "execution_result": {
+            "success": true,
+            "objective_value": 305.0,
+            "stdout": "OPTISHARE_OBJECTIVE=305\n",
+            "stderr": "",
+            "needs_reformulation": false
+          }
+        },
+        "validator": {
+          "validation_report": {
+            "is_valid": true,
+            "issues": [],
+            "target_agent": null
+          },
+          "final_answer": "The verified optimal objective value is 305."
+        }
+      },
+      "verification": {
+        "status": "verified",
+        "code_executed": true,
+        "model_status_matches_canonical": true,
+        "objective_matches_canonical": true,
+        "objective_matches_source": true,
+        "absolute_difference_from_source": 0.0,
+        "tolerance": 1e-06,
+        "note": null
+      }
+    },
+    {
+      "example_id": "revenue_maximization_9",
+      "source": {
+        "row_index": 9,
+        "folder_name": "revenue_maximization",
+        "question": "We have a set of flight legs (one-way non-stop flight) with a limited passenger capacity. According to market research, we defined a set of flight itineraries to sell as a package with a given price. For each package, we have an estimated demand. How many units of each package should we sell to maximize the revenue? We reserve the passenger seats according to the number of packages we want to sell.\nParameters: {\"available_seats\": [50, 60, 70], \"demand\": [30, 40], \"revenue\": [100, 150], \"delta\": [[1, 1, 0], [0, 1, 1]]}",
+        "dataset_expected_objective": 8000.0
+      },
+      "canonical_model": {
+        "family": "Airline itinerary revenue management",
+        "decision_variables": "x[p] is the number of itinerary packages sold.",
+        "objective": "Maximize package revenue.",
+        "constraints": [
+          "Do not sell more than estimated demand for a package.",
+          "Do not reserve more seats than available on any flight leg."
+        ],
+        "domain": "x[p] is integer and nonnegative."
+      },
+      "canonical_expected_objective": 8000.0,
+      "expected_outputs": {
+        "interpreter": {
+          "interpreted_problem": "Model the supplied instance as airline itinerary revenue management. x[p] is the number of itinerary packages sold. Maximize package revenue. Do not sell more than estimated demand for a package. Do not reserve more seats than available on any flight leg."
+        },
+        "formulator": {
+          "mathematical_formulation": "## Model family\nAirline itinerary revenue management\n\n## Decision variables\nx[p] is the number of itinerary packages sold.\n\n## Objective\nMaximize package revenue.\n\n## Constraints\n1. Do not sell more than estimated demand for a package.\n2. Do not reserve more seats than available on any flight leg.\n\n## Domain\nx[p] is integer and nonnegative.",
+          "formulation_review": {
+            "is_valid": true,
+            "issues": []
+          },
+          "formulator_review_cycles": 1
+        },
+        "programmer": {
+          "generated_code": "import gurobipy as gp\nfrom gurobipy import GRB\n\ndata = {'available_seats': [50, 60, 70], 'demand': [30, 40], 'revenue': [100, 150], 'delta': [[1, 1, 0], [0, 1, 1]]}\nmodel = gp.Model(env=env)\nP = range(len(data['demand'])); L = range(len(data['available_seats']))\nx = model.addVars(P, vtype=GRB.INTEGER, lb=0, ub={p:data['demand'][p] for p in P}, name='packages')\nmodel.setObjective(gp.quicksum(data['revenue'][p] * x[p] for p in P), GRB.MAXIMIZE)\nmodel.addConstrs((gp.quicksum(data['delta'][p][l] * x[p] for p in P) <= data['available_seats'][l] for l in L), name='seat_capacity')\nmodel.optimize()\nif model.Status != GRB.OPTIMAL:\n    raise RuntimeError(f'Model did not solve to optimality: {model.Status}')\nprint(f'OPTISHARE_OBJECTIVE={model.ObjVal:.17g}')\n",
+          "programmer_review": {
+            "is_valid": true,
+            "issues": []
+          },
+          "programmer_attempts": 1,
+          "programmer_review_cycles": 1
+        },
+        "execute_code": {
+          "execution_result": {
+            "success": true,
+            "objective_value": 8000.0,
+            "stdout": "OPTISHARE_OBJECTIVE=8000\n",
+            "stderr": "",
+            "needs_reformulation": false
+          }
+        },
+        "validator": {
+          "validation_report": {
+            "is_valid": true,
+            "issues": [],
+            "target_agent": null
+          },
+          "final_answer": "The verified optimal objective value is 8000."
+        }
+      },
+      "verification": {
+        "status": "verified",
+        "code_executed": true,
+        "model_status_matches_canonical": true,
+        "objective_matches_canonical": true,
+        "objective_matches_source": true,
+        "absolute_difference_from_source": 0.0,
+        "tolerance": 1e-06,
+        "note": null
+      }
+    },
+    {
+      "example_id": "knapsack_optimization_10",
+      "source": {
+        "row_index": 10,
+        "folder_name": "knapsack_optimization",
+        "question": "The Knapsack Problem is a classic optimization problem in operations research and computer science. The problem is to determine the most valuable combination of items to include in a knapsack, given a set of items with different values and weights, and a maximum weight capacity of the knapsack. The goal is to maximize the total value of the items in the knapsack without exceeding its weight capacity.\nParameters: {\"item_values\": [60, 100, 120], \"item_weights\": [10, 20, 30], \"max_weight_knapsack\": 50}",
+        "dataset_expected_objective": 220.0
+      },
+      "canonical_model": {
+        "family": "Binary knapsack",
+        "decision_variables": "x[i] indicates whether item i is selected.",
+        "objective": "Maximize the total selected value.",
+        "constraints": [
+          "Keep the total selected weight within the knapsack capacity."
+        ],
+        "domain": "x[i] is binary."
+      },
+      "canonical_expected_objective": 220.0,
+      "expected_outputs": {
+        "interpreter": {
+          "interpreted_problem": "Model the supplied instance as binary knapsack. x[i] indicates whether item i is selected. Maximize the total selected value. Keep the total selected weight within the knapsack capacity."
+        },
+        "formulator": {
+          "mathematical_formulation": "## Model family\nBinary knapsack\n\n## Decision variables\nx[i] indicates whether item i is selected.\n\n## Objective\nMaximize the total selected value.\n\n## Constraints\n1. Keep the total selected weight within the knapsack capacity.\n\n## Domain\nx[i] is binary.",
+          "formulation_review": {
+            "is_valid": true,
+            "issues": []
+          },
+          "formulator_review_cycles": 1
+        },
+        "programmer": {
+          "generated_code": "import gurobipy as gp\nfrom gurobipy import GRB\n\ndata = {'item_values': [60, 100, 120], 'item_weights': [10, 20, 30], 'max_weight_knapsack': 50}\nmodel = gp.Model(env=env)\nI = range(len(data['item_values']))\nx = model.addVars(I, vtype=GRB.BINARY, name='selected')\nmodel.setObjective(gp.quicksum(data['item_values'][i] * x[i] for i in I), GRB.MAXIMIZE)\nmodel.addConstr(gp.quicksum(data['item_weights'][i] * x[i] for i in I) <= data['max_weight_knapsack'], name='capacity')\nmodel.optimize()\nif model.Status != GRB.OPTIMAL:\n    raise RuntimeError(f'Model did not solve to optimality: {model.Status}')\nprint(f'OPTISHARE_OBJECTIVE={model.ObjVal:.17g}')\n",
+          "programmer_review": {
+            "is_valid": true,
+            "issues": []
+          },
+          "programmer_attempts": 1,
+          "programmer_review_cycles": 1
+        },
+        "execute_code": {
+          "execution_result": {
+            "success": true,
+            "objective_value": 220.0,
+            "stdout": "OPTISHARE_OBJECTIVE=220\n",
+            "stderr": "",
+            "needs_reformulation": false
+          }
+        },
+        "validator": {
+          "validation_report": {
+            "is_valid": true,
+            "issues": [],
+            "target_agent": null
+          },
+          "final_answer": "The verified optimal objective value is 220."
+        }
+      },
+      "verification": {
+        "status": "verified",
+        "code_executed": true,
+        "model_status_matches_canonical": true,
+        "objective_matches_canonical": true,
+        "objective_matches_source": true,
+        "absolute_difference_from_source": 0.0,
+        "tolerance": 1e-06,
+        "note": null
+      }
+    },
+    {
+      "example_id": "netmcol_11",
+      "source": {
+        "row_index": 11,
+        "folder_name": "netmcol",
+        "question": "Consider a transportation problem with multiple products. Given a set of cities `Cities` and a set of links `Links` between the cities. Each city `i` has a certain supply of each product `p` `Supply_{i,p}` and a certain demand for each product `p` `Demand_{i,p}`. The cost of shipping one package of product `p` from city `i` to city `j` is `ShipmentCost_{i, j, p}`. Each link `(i, j)` has a certain capacity for each product `p` `Capacity_{i,j,p}` and a joint capacity `JointCapacity_{i, j}` for all products. The problem aims to minimize the total cost of shipping products from the cities to the cities. The total number of packages to be shipped on each link `(i, j)` should not exceed its joint capacity. How to decide the number of packages of each product `p` to be shipped from each city `i` to each city `j`?\nParameters: {\"Cities\": [\"A\", \"B\"], \"Links\": [[\"A\", \"B\"]], \"Products\": [\"Product1\"], \"Supply\": [[10], [0]], \"Demand\": [[0], [10]], \"ShipmentCost\": [[[1]]], \"Capacity\": [[[10]]], \"JointCapacity\": [[10]]}",
+        "dataset_expected_objective": 10.0
+      },
+      "canonical_model": {
+        "family": "Capacitated multi-commodity network flow",
+        "decision_variables": "x[a,p] is the amount of product p shipped on directed link a.",
+        "objective": "Minimize total shipment cost.",
+        "constraints": [
+          "Balance supply, demand, inflow, and outflow for every city and product.",
+          "Respect product-specific and joint link capacities."
+        ],
+        "domain": "x[a,p] is continuous and nonnegative."
+      },
+      "canonical_expected_objective": 10.0,
+      "expected_outputs": {
+        "interpreter": {
+          "interpreted_problem": "Model the supplied instance as capacitated multi-commodity network flow. x[a,p] is the amount of product p shipped on directed link a. Minimize total shipment cost. Balance supply, demand, inflow, and outflow for every city and product. Respect product-specific and joint link capacities."
+        },
+        "formulator": {
+          "mathematical_formulation": "## Model family\nCapacitated multi-commodity network flow\n\n## Decision variables\nx[a,p] is the amount of product p shipped on directed link a.\n\n## Objective\nMinimize total shipment cost.\n\n## Constraints\n1. Balance supply, demand, inflow, and outflow for every city and product.\n2. Respect product-specific and joint link capacities.\n\n## Domain\nx[a,p] is continuous and nonnegative.",
+          "formulation_review": {
+            "is_valid": true,
+            "issues": []
+          },
+          "formulator_review_cycles": 1
+        },
+        "programmer": {
+          "generated_code": "import gurobipy as gp\nfrom gurobipy import GRB\n\ndata = {'Cities': ['A', 'B'], 'Links': [['A', 'B']], 'Products': ['Product1'], 'Supply': [[10], [0]], 'Demand': [[0], [10]], 'ShipmentCost': [[[1]]], 'Capacity': [[[10]]], 'JointCapacity': [[10]]}\nmodel = gp.Model(env=env)\nC = data['Cities']; links = [tuple(a) for a in data['Links']]; A = range(len(links)); P = range(len(data['Products']))\nx = model.addVars(A, P, lb=0, name='shipment')\nmodel.setObjective(gp.quicksum(data['ShipmentCost'][a][0][p] * x[a,p] for a in A for p in P), GRB.MINIMIZE)\nfor ci, city in enumerate(C):\n    for p in P:\n        outflow = gp.quicksum(x[a,p] for a in A if links[a][0] == city)\n        inflow = gp.quicksum(x[a,p] for a in A if links[a][1] == city)\n        model.addConstr(outflow - inflow == data['Supply'][ci][p] - data['Demand'][ci][p])\nfor ai, a in enumerate(A):\n    model.addConstrs((x[a,p] <= data['Capacity'][a][0][p] for p in P))\n    model.addConstr(gp.quicksum(x[a,p] for p in P) <= data['JointCapacity'][a][0])\nmodel.optimize()\nif model.Status != GRB.OPTIMAL:\n    raise RuntimeError(f'Model did not solve to optimality: {model.Status}')\nprint(f'OPTISHARE_OBJECTIVE={model.ObjVal:.17g}')\n",
+          "programmer_review": {
+            "is_valid": true,
+            "issues": []
+          },
+          "programmer_attempts": 1,
+          "programmer_review_cycles": 1
+        },
+        "execute_code": {
+          "execution_result": {
+            "success": true,
+            "objective_value": 10.0,
+            "stdout": "OPTISHARE_OBJECTIVE=10\n",
+            "stderr": "",
+            "needs_reformulation": false
+          }
+        },
+        "validator": {
+          "validation_report": {
+            "is_valid": true,
+            "issues": [],
+            "target_agent": null
+          },
+          "final_answer": "The verified optimal objective value is 10."
+        }
+      },
+      "verification": {
+        "status": "verified",
+        "code_executed": true,
+        "model_status_matches_canonical": true,
+        "objective_matches_canonical": true,
+        "objective_matches_source": true,
+        "absolute_difference_from_source": 0.0,
+        "tolerance": 1e-06,
+        "note": null
+      }
+    },
+    {
+      "example_id": "steel4_12",
+      "source": {
+        "row_index": 12,
+        "folder_name": "steel4",
+        "question": "Consider a production problem. Given a set of products `Products` and a set of stages `Stages`. Each product `p` has a certain production rate `Rate_{p, s}` in each stage `s` and a certain profit `Profit_{p}` per ton. Each stage `s` has a certain number of hours `Available_{s}` available per week. There are also lower and upper limits on the tons of each product sold in a week, `Commit_{p}` and `Market_{p}` respectively. The problem aims to maximize the total profit from all products. It is constrained that the total number of hours used by all products in each stage `s` may not exceed the hours available. How to decide the number of tons to be produced for each product `p`?\nParameters: {\"products\": [\"P1\", \"P2\"], \"stages\": [\"S1\", \"S2\"], \"rate\": [[2, 3], [3, 2]], \"profit\": [10, 20], \"commit\": [1, 2], \"market\": [5, 4], \"avail\": [10, 8]}",
+        "dataset_expected_objective": 130.0
+      },
+      "canonical_model": {
+        "family": "Multi-stage production planning",
+        "decision_variables": "x[p] is the number of tons produced and sold of product p.",
+        "objective": "Maximize total weekly profit.",
+        "constraints": [
+          "Keep production between committed and market limits.",
+          "At each stage, total processing time x[p]/rate[p,s] cannot exceed available hours."
+        ],
+        "domain": "x[p] is continuous."
+      },
+      "canonical_expected_objective": 130.0,
+      "expected_outputs": {
+        "interpreter": {
+          "interpreted_problem": "Model the supplied instance as multi-stage production planning. x[p] is the number of tons produced and sold of product p. Maximize total weekly profit. Keep production between committed and market limits. At each stage, total processing time x[p]/rate[p,s] cannot exceed available hours."
+        },
+        "formulator": {
+          "mathematical_formulation": "## Model family\nMulti-stage production planning\n\n## Decision variables\nx[p] is the number of tons produced and sold of product p.\n\n## Objective\nMaximize total weekly profit.\n\n## Constraints\n1. Keep production between committed and market limits.\n2. At each stage, total processing time x[p]/rate[p,s] cannot exceed available hours.\n\n## Domain\nx[p] is continuous.",
+          "formulation_review": {
+            "is_valid": true,
+            "issues": []
+          },
+          "formulator_review_cycles": 1
+        },
+        "programmer": {
+          "generated_code": "import gurobipy as gp\nfrom gurobipy import GRB\n\ndata = {'products': ['P1', 'P2'], 'stages': ['S1', 'S2'], 'rate': [[2, 3], [3, 2]], 'profit': [10, 20], 'commit': [1, 2], 'market': [5, 4], 'avail': [10, 8]}\nmodel = gp.Model(env=env)\nP = range(len(data['products'])); S = range(len(data['stages']))\nx = model.addVars(P, lb={p:data['commit'][p] for p in P}, ub={p:data['market'][p] for p in P}, name='tons')\nmodel.setObjective(gp.quicksum(data['profit'][p] * x[p] for p in P), GRB.MAXIMIZE)\nmodel.addConstrs((gp.quicksum(x[p] / data['rate'][p][s] for p in P) <= data['avail'][s] for s in S), name='stage_time')\nmodel.optimize()\nif model.Status != GRB.OPTIMAL:\n    raise RuntimeError(f'Model did not solve to optimality: {model.Status}')\nprint(f'OPTISHARE_OBJECTIVE={model.ObjVal:.17g}')\n",
+          "programmer_review": {
+            "is_valid": true,
+            "issues": []
+          },
+          "programmer_attempts": 1,
+          "programmer_review_cycles": 1
+        },
+        "execute_code": {
+          "execution_result": {
+            "success": true,
+            "objective_value": 130.0,
+            "stdout": "OPTISHARE_OBJECTIVE=130\n",
+            "stderr": "",
+            "needs_reformulation": false
+          }
+        },
+        "validator": {
+          "validation_report": {
+            "is_valid": true,
+            "issues": [],
+            "target_agent": null
+          },
+          "final_answer": "The verified optimal objective value is 130."
+        }
+      },
+      "verification": {
+        "status": "verified",
+        "code_executed": true,
+        "model_status_matches_canonical": true,
+        "objective_matches_canonical": true,
+        "objective_matches_source": true,
+        "absolute_difference_from_source": 0.0,
+        "tolerance": 1e-06,
+        "note": null
+      }
+    },
+    {
+      "example_id": "blend_problem_13",
+      "source": {
+        "row_index": 13,
+        "folder_name": "blend_problem",
+        "question": "The problem aims to determine the optimal amounts of alloys to purchase in order to achieve a desired blend of required elements at the minimum cost. We are given a set of alloys available on the market and a set of required elements for the blend, the percentage composition data of each required element in each alloy, the desired blend percentage of each required element, the price of each alloy. The decision is the amount of each alloy to be purchased, which is continuous. The objective is to minimize the total cost of the alloy purchased. There are two constraints. The first set of constraints ensures that the desired blend percentage of each required element is met. The second constraint ensures that the total amount of alloys purchased is equal to 1.\nParameters: {\"alloys_on_market\": [0, 1], \"required_elements\": [\"A\", \"B\"], \"composition_data\": [[0.5, 0.1], [0.5, 0.9]], \"desired_blend_percentage\": [0.5, 0.5], \"alloy_price\": [10.0, 20.0]}",
+        "dataset_expected_objective": 10.0
+      },
+      "canonical_model": {
+        "family": "Minimum-cost alloy blending",
+        "decision_variables": "x[a] is the fraction of alloy a in one unit of final blend.",
+        "objective": "Minimize alloy purchase cost per unit of blend.",
+        "constraints": [
+          "The alloy fractions sum to one.",
+          "The weighted composition equals the desired percentage of every required element."
+        ],
+        "domain": "x[a] is continuous and nonnegative."
+      },
+      "canonical_expected_objective": 10.0,
+      "expected_outputs": {
+        "interpreter": {
+          "interpreted_problem": "Model the supplied instance as minimum-cost alloy blending. x[a] is the fraction of alloy a in one unit of final blend. Minimize alloy purchase cost per unit of blend. The alloy fractions sum to one. The weighted composition equals the desired percentage of every required element."
+        },
+        "formulator": {
+          "mathematical_formulation": "## Model family\nMinimum-cost alloy blending\n\n## Decision variables\nx[a] is the fraction of alloy a in one unit of final blend.\n\n## Objective\nMinimize alloy purchase cost per unit of blend.\n\n## Constraints\n1. The alloy fractions sum to one.\n2. The weighted composition equals the desired percentage of every required element.\n\n## Domain\nx[a] is continuous and nonnegative.",
+          "formulation_review": {
+            "is_valid": true,
+            "issues": []
+          },
+          "formulator_review_cycles": 1
+        },
+        "programmer": {
+          "generated_code": "import gurobipy as gp\nfrom gurobipy import GRB\n\ndata = {'alloys_on_market': [0, 1], 'required_elements': ['A', 'B'], 'composition_data': [[0.5, 0.1], [0.5, 0.9]], 'desired_blend_percentage': [0.5, 0.5], 'alloy_price': [10.0, 20.0]}\nmodel = gp.Model(env=env)\nA = range(len(data['alloys_on_market'])); E = range(len(data['required_elements']))\nx = model.addVars(A, lb=0, name='alloy_fraction')\nmodel.setObjective(gp.quicksum(data['alloy_price'][a] * x[a] for a in A), GRB.MINIMIZE)\nmodel.addConstr(gp.quicksum(x[a] for a in A) == 1, name='total_blend')\nmodel.addConstrs((gp.quicksum(data['composition_data'][e][a] * x[a] for a in A) == data['desired_blend_percentage'][e] for e in E), name='composition')\nmodel.optimize()\nif model.Status != GRB.OPTIMAL:\n    raise RuntimeError(f'Model did not solve to optimality: {model.Status}')\nprint(f'OPTISHARE_OBJECTIVE={model.ObjVal:.17g}')\n",
+          "programmer_review": {
+            "is_valid": true,
+            "issues": []
+          },
+          "programmer_attempts": 1,
+          "programmer_review_cycles": 1
+        },
+        "execute_code": {
+          "execution_result": {
+            "success": true,
+            "objective_value": 10.0,
+            "stdout": "OPTISHARE_OBJECTIVE=10\n",
+            "stderr": "",
+            "needs_reformulation": false
+          }
+        },
+        "validator": {
+          "validation_report": {
+            "is_valid": true,
+            "issues": [],
+            "target_agent": null
+          },
+          "final_answer": "The verified optimal objective value is 10."
+        }
+      },
+      "verification": {
+        "status": "verified",
+        "code_executed": true,
+        "model_status_matches_canonical": true,
+        "objective_matches_canonical": true,
+        "objective_matches_source": true,
+        "absolute_difference_from_source": 0.0,
+        "tolerance": 1e-06,
+        "note": null
+      }
+    },
+    {
+      "example_id": "car_selection_14",
+      "source": {
+        "row_index": 14,
+        "folder_name": "car_selection",
+        "question": "The Car Selection Problem is a mixed integer programming model that aims to assign participants to cars in a way that maximizes the total number of assignments. The problem involves a set of participants and a set of cars, where each participant is interested in a subset of cars. The objective is to find the optimal assignment of participants to cars that satisfies certain constraints.\nParameters: {\"participants\": [\"P1\", \"P2\", \"P3\"], \"cars\": [\"C1\", \"C2\", \"C3\"], \"possible_assignments\": [[1, 0, 1], [0, 1, 0], [1, 1, 1]]}",
+        "dataset_expected_objective": 3.0
+      },
+      "canonical_model": {
+        "family": "Maximum-cardinality bipartite assignment",
+        "decision_variables": "x[p,c] indicates whether participant p is assigned to car c.",
+        "objective": "Maximize the number of participant-car assignments.",
+        "constraints": [
+          "Assign each participant to at most one car.",
+          "Assign each car to at most one participant.",
+          "Allow only listed participant-car pairs."
+        ],
+        "domain": "x[p,c] is binary."
+      },
+      "canonical_expected_objective": 3.0,
+      "expected_outputs": {
+        "interpreter": {
+          "interpreted_problem": "Model the supplied instance as maximum-cardinality bipartite assignment. x[p,c] indicates whether participant p is assigned to car c. Maximize the number of participant-car assignments. Assign each participant to at most one car. Assign each car to at most one participant. Allow only listed participant-car pairs."
+        },
+        "formulator": {
+          "mathematical_formulation": "## Model family\nMaximum-cardinality bipartite assignment\n\n## Decision variables\nx[p,c] indicates whether participant p is assigned to car c.\n\n## Objective\nMaximize the number of participant-car assignments.\n\n## Constraints\n1. Assign each participant to at most one car.\n2. Assign each car to at most one participant.\n3. Allow only listed participant-car pairs.\n\n## Domain\nx[p,c] is binary.",
+          "formulation_review": {
+            "is_valid": true,
+            "issues": []
+          },
+          "formulator_review_cycles": 1
+        },
+        "programmer": {
+          "generated_code": "import gurobipy as gp\nfrom gurobipy import GRB\n\ndata = {'participants': ['P1', 'P2', 'P3'], 'cars': ['C1', 'C2', 'C3'], 'possible_assignments': [[1, 0, 1], [0, 1, 0], [1, 1, 1]]}\nmodel = gp.Model(env=env)\nP = range(len(data['participants'])); C = range(len(data['cars']))\nx = model.addVars(P, C, vtype=GRB.BINARY, name='assignment')\nmodel.setObjective(gp.quicksum(x[p,c] for p in P for c in C), GRB.MAXIMIZE)\nmodel.addConstrs((gp.quicksum(x[p,c] for c in C) <= 1 for p in P), name='participant_once')\nmodel.addConstrs((gp.quicksum(x[p,c] for p in P) <= 1 for c in C), name='car_once')\nmodel.addConstrs((x[p,c] <= data['possible_assignments'][p][c] for p in P for c in C), name='eligible')\nmodel.optimize()\nif model.Status != GRB.OPTIMAL:\n    raise RuntimeError(f'Model did not solve to optimality: {model.Status}')\nprint(f'OPTISHARE_OBJECTIVE={model.ObjVal:.17g}')\n",
+          "programmer_review": {
+            "is_valid": true,
+            "issues": []
+          },
+          "programmer_attempts": 1,
+          "programmer_review_cycles": 1
+        },
+        "execute_code": {
+          "execution_result": {
+            "success": true,
+            "objective_value": 3.0,
+            "stdout": "OPTISHARE_OBJECTIVE=3\n",
+            "stderr": "",
+            "needs_reformulation": false
+          }
+        },
+        "validator": {
+          "validation_report": {
+            "is_valid": true,
+            "issues": [],
+            "target_agent": null
+          },
+          "final_answer": "The verified optimal objective value is 3."
+        }
+      },
+      "verification": {
+        "status": "verified",
+        "code_executed": true,
+        "model_status_matches_canonical": true,
+        "objective_matches_canonical": true,
+        "objective_matches_source": true,
+        "absolute_difference_from_source": 0.0,
+        "tolerance": 1e-06,
+        "note": null
+      }
+    },
+    {
+      "example_id": "aircraft_assignment_15",
+      "source": {
+        "row_index": 15,
+        "folder_name": "aircraft_assignment",
+        "question": "The Aircraft Assignment Problem aims to assign aircraft to routes in order to minimize the total cost while satisfying demand constraints with available aircraft. The problem involves a set of aircraft and a set of routes. Given the costs of assigning an aircraft to a route. The objective is to minimize the total cost of the assignment. There are limited available aircraft. It is constrained that the number of each aircraft allocated does not exceed its available number. Given the demand of each route and the capabilities (the largest number of people can be carried) of an aircraft for a route. The demand constraint ensures that the total allocation for each route satisfies the demand. The problem seeks to find the most cost-effective assignment of aircraft to routes.\nParameters: {\"availability\": [2, 3, 1], \"demand\": [100, 150], \"capabilities\": [[50, 70], [60, 80], [70, 90]], \"costs\": [[100, 200], [150, 250], [200, 300]]}",
+        "dataset_expected_objective": 700.0
+      },
+      "canonical_model": {
+        "family": "Aircraft-to-route fleet assignment",
+        "decision_variables": "x[a,r] is the integer number of aircraft of type a allocated to route r.",
+        "objective": "Minimize total assignment cost.",
+        "constraints": [
+          "Do not allocate more aircraft of a type than available.",
+          "Provide at least the passenger demand of every route using route-specific aircraft capacity."
+        ],
+        "domain": "x[a,r] is integer and nonnegative."
+      },
+      "canonical_expected_objective": 700.0,
+      "expected_outputs": {
+        "interpreter": {
+          "interpreted_problem": "Model the supplied instance as aircraft-to-route fleet assignment. x[a,r] is the integer number of aircraft of type a allocated to route r. Minimize total assignment cost. Do not allocate more aircraft of a type than available. Provide at least the passenger demand of every route using route-specific aircraft capacity."
+        },
+        "formulator": {
+          "mathematical_formulation": "## Model family\nAircraft-to-route fleet assignment\n\n## Decision variables\nx[a,r] is the integer number of aircraft of type a allocated to route r.\n\n## Objective\nMinimize total assignment cost.\n\n## Constraints\n1. Do not allocate more aircraft of a type than available.\n2. Provide at least the passenger demand of every route using route-specific aircraft capacity.\n\n## Domain\nx[a,r] is integer and nonnegative.",
+          "formulation_review": {
+            "is_valid": true,
+            "issues": []
+          },
+          "formulator_review_cycles": 1
+        },
+        "programmer": {
+          "generated_code": "import gurobipy as gp\nfrom gurobipy import GRB\n\ndata = {'availability': [2, 3, 1], 'demand': [100, 150], 'capabilities': [[50, 70], [60, 80], [70, 90]], 'costs': [[100, 200], [150, 250], [200, 300]]}\nmodel = gp.Model(env=env)\nA = range(len(data['availability'])); R = range(len(data['demand']))\nx = model.addVars(A, R, vtype=GRB.INTEGER, lb=0, name='aircraft')\nmodel.setObjective(gp.quicksum(data['costs'][a][r] * x[a,r] for a in A for r in R), GRB.MINIMIZE)\nmodel.addConstrs((gp.quicksum(x[a,r] for r in R) <= data['availability'][a] for a in A), name='availability')\nmodel.addConstrs((gp.quicksum(data['capabilities'][a][r] * x[a,r] for a in A) >= data['demand'][r] for r in R), name='demand')\nmodel.optimize()\nif model.Status != GRB.OPTIMAL:\n    raise RuntimeError(f'Model did not solve to optimality: {model.Status}')\nprint(f'OPTISHARE_OBJECTIVE={model.ObjVal:.17g}')\n",
+          "programmer_review": {
+            "is_valid": true,
+            "issues": []
+          },
+          "programmer_attempts": 1,
+          "programmer_review_cycles": 1
+        },
+        "execute_code": {
+          "execution_result": {
+            "success": true,
+            "objective_value": 700.0,
+            "stdout": "OPTISHARE_OBJECTIVE=700\n",
+            "stderr": "",
+            "needs_reformulation": false
+          }
+        },
+        "validator": {
+          "validation_report": {
+            "is_valid": true,
+            "issues": [],
+            "target_agent": null
+          },
+          "final_answer": "The verified optimal objective value is 700."
+        }
+      },
+      "verification": {
+        "status": "verified",
+        "code_executed": true,
+        "model_status_matches_canonical": true,
+        "objective_matches_canonical": true,
+        "objective_matches_source": true,
+        "absolute_difference_from_source": 0.0,
+        "tolerance": 1e-06,
+        "note": null
+      }
+    },
+    {
+      "example_id": "media_selection_16",
+      "source": {
+        "row_index": 16,
+        "folder_name": "media_selection",
+        "question": "The main media selection problem is a problem of allocating advertising budgets between possible advertising outlets. Given a set of media options, it aims to determine which media should be selected so that all audiences are reached with minimum campaign cost. It does not matter if an audience is covered more than once, as long as it is covered at least once. Moreover, the company does not wish to spend more money on the campaign than necessary.\nParameters: {\"target_audiences\": [0, 1, 2], \"advertising_media\": [0, 1, 2], \"incidence_matrix\": [[1, 0, 1], [1, 1, 0], [0, 1, 1]], \"media_costs\": [10, 15, 20]}",
+        "dataset_expected_objective": 25.0
+      },
+      "canonical_model": {
+        "family": "Minimum-cost set covering",
+        "decision_variables": "x[m] indicates whether advertising medium m is selected.",
+        "objective": "Minimize total campaign cost.",
+        "constraints": [
+          "Reach every target audience through at least one selected medium according to the audience-by-medium incidence matrix."
+        ],
+        "domain": "x[m] is binary."
+      },
+      "canonical_expected_objective": 25.0,
+      "expected_outputs": {
+        "interpreter": {
+          "interpreted_problem": "Model the supplied instance as minimum-cost set covering. x[m] indicates whether advertising medium m is selected. Minimize total campaign cost. Reach every target audience through at least one selected medium according to the audience-by-medium incidence matrix."
+        },
+        "formulator": {
+          "mathematical_formulation": "## Model family\nMinimum-cost set covering\n\n## Decision variables\nx[m] indicates whether advertising medium m is selected.\n\n## Objective\nMinimize total campaign cost.\n\n## Constraints\n1. Reach every target audience through at least one selected medium according to the audience-by-medium incidence matrix.\n\n## Domain\nx[m] is binary.",
+          "formulation_review": {
+            "is_valid": true,
+            "issues": []
+          },
+          "formulator_review_cycles": 1
+        },
+        "programmer": {
+          "generated_code": "import gurobipy as gp\nfrom gurobipy import GRB\n\ndata = {'target_audiences': [0, 1, 2], 'advertising_media': [0, 1, 2], 'incidence_matrix': [[1, 0, 1], [1, 1, 0], [0, 1, 1]], 'media_costs': [10, 15, 20]}\nmodel = gp.Model(env=env)\nA = range(len(data['target_audiences'])); M = range(len(data['advertising_media']))\nx = model.addVars(M, vtype=GRB.BINARY, name='medium')\nmodel.setObjective(gp.quicksum(data['media_costs'][m] * x[m] for m in M), GRB.MINIMIZE)\nmodel.addConstrs((gp.quicksum(data['incidence_matrix'][a][m] * x[m] for m in M) >= 1 for a in A), name='audience_coverage')\nmodel.optimize()\nif model.Status != GRB.OPTIMAL:\n    raise RuntimeError(f'Model did not solve to optimality: {model.Status}')\nprint(f'OPTISHARE_OBJECTIVE={model.ObjVal:.17g}')\n",
+          "programmer_review": {
+            "is_valid": true,
+            "issues": []
+          },
+          "programmer_attempts": 1,
+          "programmer_review_cycles": 1
+        },
+        "execute_code": {
+          "execution_result": {
+            "success": true,
+            "objective_value": 25.0,
+            "stdout": "OPTISHARE_OBJECTIVE=25\n",
+            "stderr": "",
+            "needs_reformulation": false
+          }
+        },
+        "validator": {
+          "validation_report": {
+            "is_valid": true,
+            "issues": [],
+            "target_agent": null
+          },
+          "final_answer": "The verified optimal objective value is 25."
+        }
+      },
+      "verification": {
+        "status": "verified",
+        "code_executed": true,
+        "model_status_matches_canonical": true,
+        "objective_matches_canonical": true,
+        "objective_matches_source": true,
+        "absolute_difference_from_source": 0.0,
+        "tolerance": 1e-06,
+        "note": null
+      }
+    },
+    {
+      "example_id": "aircraft_landing_17",
+      "source": {
+        "row_index": 17,
+        "folder_name": "aircraft_landing",
+        "question": "The Aircraft Landing Problem (ALP) is the problem of deciding a landing time on an appropriate runway for each aircraft in a given set of aircraft such that each aircraft lands within a predetermined time window; and separation criteria between the landing of an aircraft, and the landing of all successive aircraft, are respected. We are given the earliest landing time, latest landing time, target landing time, and penalties for landing before or after the target landing time for each aircraft. There is also a separation time that represents the minimum time required between the landing of two aircraft. The objective of the problem is to minimize the total penalties of landing before or after the target time for each aircraft. The problem includes several constraints. The order constraint ensures that the aircrafts land in a specific order. The separation constraint ensures that there is enough separation time between the landing of aircraft. The lower and upper time window constraints ensure that each aircraft lands within its respective earliest and latest time windows.\nParameters: {\"EarliestLanding\": [1, 3, 5], \"LatestLanding\": [10, 12, 15], \"TargetLanding\": [4, 8, 14], \"PenaltyAfterTarget\": [10, 20, 30], \"PenaltyBeforeTarget\": [5, 10, 15], \"SeparationTime\": [[0, 2, 3], [2, 0, 4], [3, 4, 0]]}",
+        "dataset_expected_objective": 0.0
+      },
+      "canonical_model": {
+        "family": "Fixed-order aircraft landing scheduling",
+        "decision_variables": "t[i] is landing time; early[i] and late[i] are deviations from target time.",
+        "objective": "Minimize total weighted earliness and tardiness.",
+        "constraints": [
+          "Land every aircraft inside its time window.",
+          "Respect the stated order and pairwise separation from every earlier aircraft.",
+          "Decompose landing-time deviation around the target."
+        ],
+        "domain": "t[i], early[i], and late[i] are continuous and nonnegative."
+      },
+      "canonical_expected_objective": 0.0,
+      "expected_outputs": {
+        "interpreter": {
+          "interpreted_problem": "Model the supplied instance as fixed-order aircraft landing scheduling. t[i] is landing time; early[i] and late[i] are deviations from target time. Minimize total weighted earliness and tardiness. Land every aircraft inside its time window. Respect the stated order and pairwise separation from every earlier aircraft. Decompose landing-time deviation around the target."
+        },
+        "formulator": {
+          "mathematical_formulation": "## Model family\nFixed-order aircraft landing scheduling\n\n## Decision variables\nt[i] is landing time; early[i] and late[i] are deviations from target time.\n\n## Objective\nMinimize total weighted earliness and tardiness.\n\n## Constraints\n1. Land every aircraft inside its time window.\n2. Respect the stated order and pairwise separation from every earlier aircraft.\n3. Decompose landing-time deviation around the target.\n\n## Domain\nt[i], early[i], and late[i] are continuous and nonnegative.",
+          "formulation_review": {
+            "is_valid": true,
+            "issues": []
+          },
+          "formulator_review_cycles": 1
+        },
+        "programmer": {
+          "generated_code": "import gurobipy as gp\nfrom gurobipy import GRB\n\ndata = {'EarliestLanding': [1, 3, 5], 'LatestLanding': [10, 12, 15], 'TargetLanding': [4, 8, 14], 'PenaltyAfterTarget': [10, 20, 30], 'PenaltyBeforeTarget': [5, 10, 15], 'SeparationTime': [[0, 2, 3], [2, 0, 4], [3, 4, 0]]}\nmodel = gp.Model(env=env)\nA = range(len(data['EarliestLanding']))\nt = model.addVars(A, lb={i:data['EarliestLanding'][i] for i in A}, ub={i:data['LatestLanding'][i] for i in A}, name='landing')\nearly = model.addVars(A, lb=0, name='early'); late = model.addVars(A, lb=0, name='late')\nmodel.setObjective(gp.quicksum(data['PenaltyBeforeTarget'][i] * early[i] + data['PenaltyAfterTarget'][i] * late[i] for i in A), GRB.MINIMIZE)\nmodel.addConstrs((t[i] - data['TargetLanding'][i] == late[i] - early[i] for i in A), name='target_deviation')\nmodel.addConstrs((t[j] >= t[i] + data['SeparationTime'][i][j] for i in A for j in A if i < j), name='separation')\nmodel.optimize()\nif model.Status != GRB.OPTIMAL:\n    raise RuntimeError(f'Model did not solve to optimality: {model.Status}')\nprint(f'OPTISHARE_OBJECTIVE={model.ObjVal:.17g}')\n",
+          "programmer_review": {
+            "is_valid": true,
+            "issues": []
+          },
+          "programmer_attempts": 1,
+          "programmer_review_cycles": 1
+        },
+        "execute_code": {
+          "execution_result": {
+            "success": true,
+            "objective_value": 0.0,
+            "stdout": "OPTISHARE_OBJECTIVE=0\n",
+            "stderr": "",
+            "needs_reformulation": false
+          }
+        },
+        "validator": {
+          "validation_report": {
+            "is_valid": true,
+            "issues": [],
+            "target_agent": null
+          },
+          "final_answer": "The verified optimal objective value is 0."
+        }
+      },
+      "verification": {
+        "status": "verified",
+        "code_executed": true,
+        "model_status_matches_canonical": true,
+        "objective_matches_canonical": true,
+        "objective_matches_source": true,
+        "absolute_difference_from_source": 0.0,
+        "tolerance": 1e-06,
+        "note": null
+      }
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "temperature": 0.0,
+  "seed": 0,
+  "max_output_tokens": 8192,
+  "request_timeout_seconds": 600,
+  "retry_request_timeouts": false,
+  "code_timeout_seconds": 120,
+  "max_transport_retries": 2,
+  "absolute_tolerance": 0.01,
+  "relative_tolerance": 0.01,
+  "pipelines": ["direct", "code", "formulation_code"],
+  "shot_conditions": ["zero_shot", "few_shot"],
+  "datasets": ["ComplexOR", "LogiOR", "IndustryOR"]
+}

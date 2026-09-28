@@ -1,0 +1,76 @@
+{
+  "protocol_date": "2026-09-17",
+  "selection": "SHA-256 deterministic balanced round-robin within declared strata",
+  "s0": {
+    "ComplexOR": [
+      "aircraft_landing_17"
+    ],
+    "LogiOR": [
+      "prob_080"
+    ],
+    "IndustryOR": [
+      "86_85"
+    ]
+  },
+  "stability": {
+    "ComplexOR": [
+      "multi_2",
+      "steel4_12",
+      "cutting_stock_3",
+      "blend_problem_13",
+      "dietu_problem_6",
+      "media_selection_16",
+      "knapsack_optimization_10",
+      "diet_problem_4",
+      "nltrans_8",
+      "flowshop_scheduling_1"
+    ],
+    "LogiOR": [
+      "prob_052",
+      "prob_011",
+      "prob_045",
+      "prob_070",
+      "prob_047",
+      "prob_086",
+      "prob_034",
+      "prob_092",
+      "prob_014",
+      "prob_001"
+    ],
+    "IndustryOR": [
+      "43_42",
+      "69_68",
+      "60_59",
+      "65_64",
+      "25_24",
+      "81_80",
+      "13_12",
+      "75_74",
+      "83_82",
+      "67_66"
+    ]
+  },
+  "formulation_audit": {
+    "ComplexOR": [
+      "aircraft_landing_17",
+      "netasgn_0",
+      "netmcol_11",
+      "nltrans_8",
+      "diet_problem_4"
+    ],
+    "LogiOR": [
+      "prob_040",
+      "prob_018",
+      "prob_033",
+      "prob_085",
+      "prob_022"
+    ],
+    "IndustryOR": [
+      "89_88",
+      "53_52",
+      "17_16",
+      "35_34",
+      "54_53"
+    ]
+  }
+}

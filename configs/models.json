@@ -1,0 +1,7 @@
+{
+  "models": [
+    {"id": "gpt-oss:20b", "provider": "ollama", "size_b": 20, "family": "gpt-oss", "specialization": "reasoning"},
+    {"id": "deepseek-r1:14b", "provider": "ollama", "size_b": 14, "family": "deepseek-r1-distill", "specialization": "reasoning"},
+    {"id": "qwen3:14b", "provider": "ollama", "size_b": 14, "family": "qwen3", "specialization": "reasoning"}
+  ]
+}

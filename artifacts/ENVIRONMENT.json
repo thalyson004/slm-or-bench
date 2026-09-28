@@ -1,0 +1,94 @@
+{
+  "environment": {
+    "captured_at_utc": "2026-09-17T17:35:27.931421+00:00",
+    "python": "3.14.4 (tags/v3.14.4:23116f9, Apr  7 2026, 14:10:54) [MSC v.1944 64 bit (AMD64)]",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "processor": "AMD64 Family 25 Model 120 Stepping 0, AuthenticAMD",
+    "ollama_version": "ollama version is 0.17.1",
+    "nvidia_gpu": "NVIDIA GeForce RTX 5060 Ti, 591.86, 16311 MiB",
+    "gurobi_version": [
+      13,
+      0,
+      3
+    ]
+  },
+  "settings": {
+    "temperature": 0.0,
+    "seed": 0,
+    "max_output_tokens": 8192,
+    "request_timeout_seconds": 600,
+    "retry_request_timeouts": false,
+    "code_timeout_seconds": 120,
+    "max_transport_retries": 2,
+    "absolute_tolerance": 0.01,
+    "relative_tolerance": 0.01
+  },
+  "models": [
+    {
+      "id": "gpt-oss:20b",
+      "provider": "ollama",
+      "size_b": 20,
+      "family": "gpt-oss",
+      "specialization": "reasoning",
+      "ollama_metadata": {
+        "digest": "17052f91a42e97930aa6e28a6c6c06a983e6a58dbb00434885a0cf5313e376f7",
+        "size_bytes": 13793441244,
+        "modified_at": "2026-02-09T12:35:13.3424302-03:00",
+        "details": {
+          "parent_model": "",
+          "format": "gguf",
+          "family": "gptoss",
+          "families": [
+            "gptoss"
+          ],
+          "parameter_size": "20.9B",
+          "quantization_level": "MXFP4"
+        }
+      }
+    },
+    {
+      "id": "deepseek-r1:14b",
+      "provider": "ollama",
+      "size_b": 14,
+      "family": "deepseek-r1-distill",
+      "specialization": "reasoning",
+      "ollama_metadata": {
+        "digest": "c333b7232bdb521236694ffbb5f5a6b11cc45d98e9142c73123b670fca400b09",
+        "size_bytes": 8988112209,
+        "modified_at": "2026-09-17T08:09:22.5400791-03:00",
+        "details": {
+          "parent_model": "",
+          "format": "gguf",
+          "family": "qwen2",
+          "families": [
+            "qwen2"
+          ],
+          "parameter_size": "14.8B",
+          "quantization_level": "Q4_K_M"
+        }
+      }
+    },
+    {
+      "id": "qwen3:14b",
+      "provider": "ollama",
+      "size_b": 14,
+      "family": "qwen3",
+      "specialization": "reasoning",
+      "ollama_metadata": {
+        "digest": "bdbd181c33f2ed1b31c972991882db3cf4d192569092138a7d29e973cd9debe8",
+        "size_bytes": 9276198565,
+        "modified_at": "2026-09-16T09:30:14.4507634-03:00",
+        "details": {
+          "parent_model": "",
+          "format": "gguf",
+          "family": "qwen3",
+          "families": [
+            "qwen3"
+          ],
+          "parameter_size": "14.8B",
+          "quantization_level": "Q4_K_M"
+        }
+      }
+    }
+  ]
+}
