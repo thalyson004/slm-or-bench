@@ -115,10 +115,6 @@ The summary command creates `analysis/generated/summary.csv`; pass that file to 
 
 Pending.
 
-## Validity
-
-Pending.
-
 ## License
 
 Pending.
